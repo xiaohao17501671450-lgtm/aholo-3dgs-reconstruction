@@ -25,7 +25,6 @@ description: "仅用于 Aholo OpenAPI v1 的 3D 任务（reconstruction/generati
 | 网关 | `https://api.aholo3d.cn`；路径 `/world/v1/*` |
 | 查看链接 | `https://studio.aholo3d.cn/3dgs-model/{worldId}` |
 | 脚本动作 | `create` / `create-reconstruction` / `create-generation` / `status` / `poll` |
-| OUS 上传 | token 响应为 `c/m/d`；OpenAPI 成功为业务对象直出 |
 | 创建成功 | `WorldAsyncOperation` 仅含 `worldId` |
 | 积分不足 | bizCode `11003` 或 `insufficient credits` → 告知积分不足，引导前往 [www.aholo3d.cn/pricing](https://www.aholo3d.cn/pricing) 购买积分；禁止编造链接；**禁止**对**同一视频/同一笔意图**重复 `create*` 重试 |
 
@@ -37,12 +36,11 @@ description: "仅用于 Aholo OpenAPI v1 的 3D 任务（reconstruction/generati
 - 强制开启：环境变量 `AHOLO_FORCE_SSL_VERIFY=1`（或 `true` / `yes` / `on`）。
 - 兼容变量 `AHOLO_INSECURE_SKIP_VERIFY`：仅当显式设为 `0` / `false` / `no` / `off` 时才开启校验；未设置或其它值时仍按默认绕过。
 
-### 响应与兼容（Agent 排错参考）
+### 响应与排错
 
-- **OpenAPI 成功**：HTTP 200，响应体为业务对象直出（**非** OUS 的 `c` / `m` / `d`）。创建接口规范形态为 JSON `WorldAsyncOperation`，仅含 `worldId`。
-- **历史兼容**：极少数网关/旧环境创建接口可能返回**裸文本** `worldId`；脚本会兼容解析，Agent **无需**因此重复 `create`。
+- **OpenAPI 成功**：HTTP 200；创建返回 JSON `WorldAsyncOperation`，仅含 `worldId`。
 - **OpenAPI 失败**：HTTP 4xx/5xx，体为 `ApiError`：`code`、`message`、`status`、`details.metaData.bizCode`（如未登录 `10004`、积分不足 `11003`）。
-- **OUS 上传**：仍走 token 返回的 `globalDomain`，响应为 OUS V2 封装（`c` / `m` / `d`），与 OpenAPI 直出不同。
+- **OUS 上传**：素材走 token 返回的上传域名。
 
 ## 3. Agent 硬约束（必须严格执行）
 
