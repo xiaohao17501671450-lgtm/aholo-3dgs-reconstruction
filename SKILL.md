@@ -27,11 +27,22 @@ description: "仅用于 Aholo OpenAPI v1 的 3D 任务（reconstruction/generati
 | 脚本动作 | `create` / `create-reconstruction` / `create-generation` / `status` / `poll` |
 | OUS 上传 | token 响应为 `c/m/d`；OpenAPI 成功为业务对象直出 |
 | 创建成功 | `WorldAsyncOperation` 仅含 `worldId` |
-| 积分不足 | bizCode `11003` 或 `insufficient credits` → 告知积分不足，引导 [labs.aholo3d.cn/quickstart](https://labs.aholo3d.cn/quickstart)，禁止编造链接；**禁止**对**同一视频/同一笔意图**重复 `create*` 重试 |
+| 积分不足 | bizCode `11003` 或 `insufficient credits` → 告知积分不足，引导前往 [www.aholo3d.cn/pricing](https://www.aholo3d.cn/pricing) 购买积分；禁止编造链接；**禁止**对**同一视频/同一笔意图**重复 `create*` 重试 |
 
 **缺 `AHOLO_API_KEY`：** 说明如何配置环境变量，请用户回复「继续」后由 Agent 代跑；**禁止**把「用户自己执行 python 命令」作为主路径。
 
-**TLS：** 脚本默认跳过证书校验；需校验时设 `AHOLO_FORCE_SSL_VERIFY=1`。
+### 证书校验（TLS，脚本默认行为）
+
+- 脚本**默认关闭** SSL 证书校验，避免公司网络/本机自签证书导致 `CERTIFICATE_VERIFY_FAILED`。
+- 强制开启：环境变量 `AHOLO_FORCE_SSL_VERIFY=1`（或 `true` / `yes` / `on`）。
+- 兼容变量 `AHOLO_INSECURE_SKIP_VERIFY`：仅当显式设为 `0` / `false` / `no` / `off` 时才开启校验；未设置或其它值时仍按默认绕过。
+
+### 响应与兼容（Agent 排错参考）
+
+- **OpenAPI 成功**：HTTP 200，响应体为业务对象直出（**非** OUS 的 `c` / `m` / `d`）。创建接口规范形态为 JSON `WorldAsyncOperation`，仅含 `worldId`。
+- **历史兼容**：极少数网关/旧环境创建接口可能返回**裸文本** `worldId`；脚本会兼容解析，Agent **无需**因此重复 `create`。
+- **OpenAPI 失败**：HTTP 4xx/5xx，体为 `ApiError`：`code`、`message`、`status`、`details.metaData.bizCode`（如未登录 `10004`、积分不足 `11003`）。
+- **OUS 上传**：仍走 token 返回的 `globalDomain`，响应为 OUS V2 封装（`c` / `m` / `d`），与 OpenAPI 直出不同。
 
 ## 3. Agent 硬约束（必须严格执行）
 
@@ -123,6 +134,8 @@ B) 每个视频单独一个 3DGS — N 个 worldId（将创建 N 笔任务，按
 
 ### 调用示例（Agent 代跑，`python -u`）
 
+JSON 参数作为**第二个 argv、单行**传入（与下方示例一致）。**Windows PowerShell** 见下节。
+
 ```bash
 # 重建（图片目录）
 python -u .cursor/skills/aholo-3dgs-reconstruction/aholo_reconstruct.py '{"action":"create","workflow":"reconstruction","imageDir":"D:/images","scene":"space","taskQuality":"high"}'
@@ -134,8 +147,28 @@ python -u .cursor/skills/aholo-3dgs-reconstruction/aholo_reconstruct.py '{"actio
 python -u .cursor/skills/aholo-3dgs-reconstruction/aholo_reconstruct.py '{"action":"poll","worldId":"xxx","intervalSeconds":60,"timeoutSeconds":14400}'
 ```
 
+### Windows / PowerShell 执行（Agent 代跑必读）
+
+用户在 **Windows** 上时，Agent 用终端跑脚本须遵守：
+
+- **Shell**：默认 **PowerShell**，**禁止**用 bash 语法（如 `&&` 链式命令）；多条命令用 `;` 分隔，或只发一条 `python -u ...`。
+- **JSON 参数**：整段 JSON 放在**单行**、用 **单引号** 包住作为第二个参数（与 §6 示例相同）；**禁止**照搬旧版多行 `'{ ... }'` 折行写法（PowerShell 会拆参失败）。
+- **路径**：Windows 盘符路径用正斜杠，如 `D:/images/0001.jpg`，避免未转义反斜杠。
+- **工作目录**：在 skill 所在仓库根或已 `cd` 到含 `.cursor/skills/aholo-3dgs-reconstruction/` 的项目根后再执行相对路径。
+- **输出**：必须带 `-u`，以便创建/上传/poll 进度实时刷出。
+- **用户自行调试**（可选）：先 `$env:AHOLO_API_KEY="..."`，再执行与上文相同的单行 `python -u ...`；仍优先由 Agent 代跑。
+
 ## 7. 附录
 
 **OpenAPI 路径：** `GET /world/v1/asset/token` · `POST /world/v1/reconstructions` · `POST /world/v1/generations` · `GET /world/v1/{worldId}`（`list` 脚本未封装）
 
 **终态：** `SUCCEEDED` · `FAILED` · `CANCELED` · `TIMEOUT` · `REJECTED`
+
+### 本地调试（可选）
+
+```powershell
+$env:AHOLO_API_KEY="your_api_key"
+# 可选：$env:AHOLO_FORCE_SSL_VERIFY="1"
+```
+
+仍建议由 Agent 代跑脚本；用户配置 Key 后回复「继续」即可。
