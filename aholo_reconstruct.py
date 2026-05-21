@@ -29,7 +29,7 @@ import urllib3
 SITE_CONFIG = {
     "base_url": "https://api.aholo3d.cn",
     "path_prefix": "",
-    "viewer_url_template": "https://www.aholo3d.cn/3dgs-model/{world_id}",
+    "viewer_url_template": "https://studio.aholo3d.cn/3dgs-model/{world_id}",
     "api_keys_url": "https://labs.aholo3d.cn/api-keys",
     "skill_script_path": ".cursor/skills/aholo-3dgs-reconstruction/aholo_reconstruct.py",
 }
@@ -50,6 +50,9 @@ PATH_UPLOAD_TOKEN = _PATHS["upload_token"]
 PATH_RECONSTRUCTIONS = _PATHS["reconstructions"]
 PATH_GENERATIONS = _PATHS["generations"]
 PATH_WORLD_DETAIL = _PATHS["world_detail"]
+
+HEADER_X_SOURCE = "x-source"
+X_SOURCE_VALUE_SKILLS = "skills"
 
 WORLD_TERMINAL_STATUS = {"SUCCEEDED", "FAILED", "CANCELED", "TIMEOUT", "REJECTED"}
 WORLD_STATUS_DESC = {
@@ -189,6 +192,12 @@ class AholoClient:
 
     def _auth_headers(self) -> Dict[str, str]:
         return {"Authorization": self.api_key, "Content-Type": "application/json"}
+
+    def _create_task_headers(self) -> Dict[str, str]:
+        """重建/生成创建接口：附带 x-source=skills，平台记为 OPEN_API_SKILL。"""
+        headers = self._auth_headers()
+        headers[HEADER_X_SOURCE] = X_SOURCE_VALUE_SKILLS
+        return headers
 
     def _ous_headers(self) -> Dict[str, str]:
         if not self.ous_token:
@@ -450,7 +459,9 @@ class AholoClient:
             body["cover"] = cover
         with step_timer("创建重建任务"):
             try:
-                resp = requests.post(url, headers=self._auth_headers(), json=body, timeout=60, verify=self.verify_ssl)
+                resp = requests.post(
+                    url, headers=self._create_task_headers(), json=body, timeout=60, verify=self.verify_ssl
+                )
                 payload = self._parse_open_api_json(resp)
                 err = self._check_open_api_response(resp, payload)
                 if err:
@@ -483,7 +494,9 @@ class AholoClient:
             body["cover"] = cover
         with step_timer("创建生成任务"):
             try:
-                resp = requests.post(url, headers=self._auth_headers(), json=body, timeout=60, verify=self.verify_ssl)
+                resp = requests.post(
+                    url, headers=self._create_task_headers(), json=body, timeout=60, verify=self.verify_ssl
+                )
                 payload = self._parse_open_api_json(resp)
                 err = self._check_open_api_response(resp, payload)
                 if err:
