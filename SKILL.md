@@ -20,7 +20,7 @@ description: "仅用于 Aholo OpenAPI v1 的 3D 任务（reconstruction/generati
 | 项 | 说明 |
 |----|------|
 | 环境变量 | `AHOLO_API_KEY`（[api-keys](https://labs.aholo3d.cn/api-keys)） |
-| 鉴权 | `Authorization: <API Key>`，无 `Bearer` |
+| 鉴权 | `Authorization: <API key>`，无 `Bearer` |
 | 创建请求头 | `x-source: skills` → 平台 `OPEN_API_SKILL` |
 | 网关 | `https://api.aholo3d.cn`；路径 `/world/v1/*` |
 | 查看链接 | `https://studio.aholo3d.cn/3dgs-model/{worldId}` |

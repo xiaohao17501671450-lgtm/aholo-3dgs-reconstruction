@@ -86,7 +86,7 @@ def _is_url(s: str) -> bool:
 def _auth_hint(error_msg: str, code: Optional[str] = None) -> str:
     text = f"{error_msg} {code or ''}".lower()
     if any(x in text for x in ["auth", "authorization", "401", "403", "appkey", "api key", "apikey", "鉴权", "认证"]):
-        return "请检查 `AHOLO_API_KEY` 是否正确，并确保请求头 `Authorization` 直接传 API Key（无 Bearer 前缀）。"
+        return "请检查 `AHOLO_API_KEY` 是否正确，并确保请求头 `Authorization` 直接传 API key（无 Bearer 前缀）。"
     return ""
 
 
@@ -706,11 +706,11 @@ def main() -> None:
     api_key = os.environ.get("AHOLO_API_KEY", "").strip()
     if not api_key:
         print("## 缺少环境变量\n")
-        print("请在本机为当前环境配置 `AHOLO_API_KEY`（Aholo 开放平台 API Key）。")
-        print(f"若尚未创建 API Key，请前往 {SITE_CONFIG['api_keys_url']}")
+        print("请在本机为当前环境配置 `AHOLO_API_KEY`（Aholo 开放平台 API key）。")
+        print(f"若尚未创建 API key，请前往 {SITE_CONFIG['api_keys_url']}")
         print("")
         print("配置完成后，**回到 Cursor 对话中回复「继续」**或重新说明你的 3D 任务即可，由 Agent 代为执行脚本与后续步骤。")
-        print("在未配置 API Key 时，**请勿自行反复运行本脚本**尤其是创建类 action，以免产生混乱。")
+        print("在未配置 API key 时，**请勿自行反复运行本脚本**尤其是创建类 action，以免产生混乱。")
         sys.exit(1)
 
     client = AholoClient(api_key=api_key)
